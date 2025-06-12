@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenAI Chat Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+            transition: transform 0.2s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-2px);
+        }
+
+        h1 {
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #718096;
+            margin-bottom: 32px;
+            font-size: 16px;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 120px;
+            transition: all 0.2s ease;
+            background: #f7fafc;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-container {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        button {
+            flex: 1;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .clear-btn {
+            background: #f7fafc;
+            color: #4a5568;
+            border: 2px solid #e2e8f0;
+        }
+
+        .clear-btn:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+
+        .response-section {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .response-section.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .response-card {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .response-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .response-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .response-title {
+            color: #2d3748;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .response-content {
+            color: #4a5568;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .token-usage {
+            background: #edf2f7;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+        }
+
+        .token-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .token-row:last-child {
+            margin-bottom: 0;
+            font-weight: 600;
+            border-top: 1px solid #cbd5e0;
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #718096;
+            font-style: italic;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .error {
+            background: #fed7d7;
+            border: 1px solid #feb2b2;
+            color: #c53030;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 24px;
+                margin: 10px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .button-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>OpenAI Chat Interface</h1>
+        <p class="subtitle">Enter your prompt below and get an AI-powered response</p>
+        
+        <form id="chatForm">
+            <div class="input-group">
+                <label for="userPrompt">Your Prompt</label>
+                <textarea 
+                    id="userPrompt" 
+                    name="userPrompt" 
+                    placeholder="Ask me anything... For example: 'Explain quantum computing in simple terms' or 'Write a short poem about coffee'"
+                    required
+                ></textarea>
+            </div>
+            
+            <div class="button-container">
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    Send Message
+                </button>
+                <button type="button" class="clear-btn" id="clearBtn">
+                    Clear
+                </button>
+            </div>
+        </form>
+
+        <div class="loading" id="loading">
+            Thinking... Please wait while I process your request.
+        </div>
+
+        <div class="response-section" id="responseSection">
+            <div class="response-card">
+                <div class="response-header">
+                    <div class="response-icon">AI</div>
+                    <div class="response-title">Assistant Response</div>
+                </div>
+                <div class="response-content" id="assistantReply"></div>
+            </div>
+
+            <div class="response-card">
+                <div class="response-header">
+                    <div class="response-icon">📊</div>
+                    <div class="response-title">Token Usage</div>
+                </div>
+                <div class="token-usage" id="tokenUsage"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('chatForm');
+        const userPromptInput = document.getElementById('userPrompt');
+        const submitBtn = document.getElementById('submitBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const loading = document.getElementById('loading');
+        const responseSection = document.getElementById('responseSection');
+        const assistantReply = document.getElementById('assistantReply');
+        const tokenUsage = document.getElementById('tokenUsage');
+
+        // Handle form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const userPrompt = userPromptInput.value.trim();
+            if (!userPrompt) {
+                alert('Please enter a prompt');
+                return;
+            }
+
+            // Show loading state
+            setLoadingState(true);
+            hideResponse();
+            clearError();
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userPrompt })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP error! status: ${response.status}`);
+                }
+
+                // Display the response
+                displayResponse(data.reply, data.tokenUsage);
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            } finally {
+                setLoadingState(false);
+            }
+        });
+
+        // Handle clear button
+        clearBtn.addEventListener('click', () => {
+            userPromptInput.value = '';
+            hideResponse();
+            clearError();
+            userPromptInput.focus();
+        });
+
+        // Auto-resize textarea
+        userPromptInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 300) + 'px';
+        });
+
+        function setLoadingState(isLoading) {
+            if (isLoading) {
+                loading.classList.add('show');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Processing...';
+            } else {
+                loading.classList.remove('show');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Message';
+            }
+        }
+
+        function displayResponse(reply, usage) {
+            // Display assistant reply
+            assistantReply.textContent = reply;
+
+            // Display token usage
+            tokenUsage.innerHTML = `
+                <div class="token-row">
+                    <span>Prompt Tokens:</span>
+                    <span>${usage.prompt_tokens}</span>
+                </div>
+                <div class="token-row">
+                    <span>Completion Tokens:</span>
+                    <span>${usage.completion_tokens}</span>
+                </div>
+                <div class="token-row">
+                    <span>Total Tokens:</span>
+                    <span>${usage.total_tokens}</span>
+                </div>
+            `;
+
+            // Show response section
+            responseSection.classList.add('show');
+            
+            // Scroll to response
+            responseSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function hideResponse() {
+            responseSection.classList.remove('show');
+        }
+
+        function showError(message) {
+            clearError();
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = `Error: ${message}`;
+            form.insertAdjacentElement('afterend', errorDiv);
+        }
+
+        function clearError() {
+            const existingError = document.querySelector('.error');
+            if (existingError) {
+                existingError.remove();
+            }
+        }
+
+        // Focus on input when page loads
+        window.addEventListener('load', () => {
+            userPromptInput.focus();
+        });
+    </script>
+</body>
+</html>
